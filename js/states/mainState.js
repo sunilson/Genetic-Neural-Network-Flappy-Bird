@@ -9,6 +9,9 @@ class MainState extends Phaser.State {
         this.game.load.image('bg', 'assets/bg.png')
     }
 
+    /**
+     * Executed before game starts
+     */
     create() {
         //this.game.stage.backgroundColor = '#71c5cf';
         this.game.physics.startSystem(Phaser.Physics.ARCADE)
@@ -47,23 +50,31 @@ class MainState extends Phaser.State {
         this.drawOrderGroup.addChild(this.sideMenu)
     }
 
+    /**
+     * Called every frame
+     */
     update() {
         this.updateBackgrounds()
         this.birds.forEach(bird => {
+            //Iterate over all alive birds
             if (bird.alive) {
+                //Display score
                 this.birdTexts[bird.id].text = "Bird " + bird.id + ": " + Math.round(bird.fitness + bird.distanceToPassing())
                 let horizontalDifference = null
                 let verticalDifference = null
 
+                //Check what passing is the nearest
                 this.pipesPassings.forEach(passing => {
                     let difference = passing.body.x - bird.body.x
                     if (difference >= 0 && (!bird.nextPassing || (bird.nextPassing.body.x - bird.body.x) < 0 || difference < Math.abs((bird.nextPassing.body.x - bird.body.x)))) {
                         if (bird.nextPassing != passing && bird.nextPassing) {
+                            //If bird passed a passing increase score by 1000
                             bird.increaseFitness(1000)
                         }
                         bird.nextPassing = passing
                     }
                     if (bird.nextPassing) {
+                        //Let neural net decide if bird should flap depending on its x and y distance to next passing
                         horizontalDifference = bird.nextPassing.body.x - bird.body.x
                         verticalDifference = bird.nextPassing.body.y - bird.body.y
                         bird.flap(horizontalDifference, verticalDifference)
@@ -74,11 +85,16 @@ class MainState extends Phaser.State {
 
         this.game.physics.arcade.overlap(this.birds, this.pipes, this.hitPipe, null, this);
     }
+    /**
+     * Check if new background needs to be appended on the right side
+     */
     updateBackgrounds() {
         let background = null
         if (this.backgrounds.length == 0) {
+            //Add new background sprite on the start
             background = this.game.add.sprite(0, -50, 'bg')
         } else if (this.backgrounds[this.backgrounds.length - 1].body.x + this.backgrounds[this.backgrounds.length - 1].width <= 500) {
+            //Add new background sprite on the right side
             background = this.game.add.sprite(500, -50, 'bg')
         }
         if (background) {
@@ -91,6 +107,10 @@ class MainState extends Phaser.State {
             this.backgroundsGroup.addChild(background)
         }
     }
+
+    /**
+     * Spawns a new row of two pipes with a passing
+     */
     addPipeRow() {
         const upperY = util.getRandomInt(50, 340)
         const pipeUpper = this.game.add.sprite(520, upperY, 'pipe');
@@ -106,6 +126,7 @@ class MainState extends Phaser.State {
         this.pipes.add(pipeLower);
 
         /*
+        //Display passing point
         const graphics = this.game.add.graphics(0, 0);
         graphics.beginFill(0xFF700B, 1);
         graphics.lineStyle(5, 0xffd900, 1);
@@ -117,6 +138,7 @@ class MainState extends Phaser.State {
         graphics.boundsPadding = 0;
         */
 
+        //Vertical middle and horizontal right point of passing. Target for birds
         const passingPoint = this.game.add.sprite(568.6, upperY + 50)
         //passingPoint.addChild(graphics)
         this.game.physics.arcade.enable(passingPoint)
@@ -140,14 +162,23 @@ class MainState extends Phaser.State {
     removePassingPoint(point) {
         this.pipesPassings.remove(point)
     }
+
+    /**
+     * What happens when bird hits pipe
+     */
     hitPipe(bird, pipe) {
         bird.kill()
         bird.alive = false;
         bird.hitPipe()
         this.alive -= 1
+        //Game is finished, calculate next round
         if (this.alive == 0) this.applyGenetics()
         this.headline.text = "Birds alive: " + this.alive
     }
+
+    /**
+     * Spawns new birds and applies weights of last generation
+     */
     startNewRun(birdAmount) {
         for (let i = 0; i < birdAmount; i++) {
             if (previousPopulationWinners && previousPopulationWinners.length > 0) {
@@ -162,9 +193,15 @@ class MainState extends Phaser.State {
             fill: "#ffffff"
         });
     }
+
+    /**
+     * Sets up the side menu
+     */
     showSideMenu() {
         this.sideMenu = this.game.add.sprite(400, 0)
         const background = this.game.add.graphics(0, 0);
+
+        //Fill menu pink
         background.beginFill(0xE91E63, 1);
         background.moveTo(0, 0)
         background.lineTo(200, 0)
@@ -187,6 +224,7 @@ class MainState extends Phaser.State {
             boundsAlignV: "middle"
         };
 
+        //Add headline and line for every bird
         this.headline = this.game.add.text(0, 0, "Birds alive: " + 10, styleHeadline)
         this.headline.setTextBounds(400, 0, 180, 50)
         this.birdTexts = []
@@ -194,24 +232,20 @@ class MainState extends Phaser.State {
             const line = this.game.add.text(0, 0, "Bird " + i + ": 0", style);
             this.birdTexts.push(line)
             line.setTextBounds(400, 44 * i, 180, 50)
+            //Display bird next to its score
             const sprite = game.add.sprite(420, 44 * i + 8, this.birds.getAt(i - 1).generateTexture())
             sprite.scale.setTo(1.7, 1.7)
         }
     }
-    render() {
-        this.birdTexts.forEach(text => {
-            //this.game.debug.geom(text.textBounds);
-        })
-    }
-    /*
-    checkWinState(bird) {
-        if (bird.fitness > 10000) this.game.state.start('won');
-    }
-    */
+    /**
+     * Calculate next generation
+     */
     applyGenetics() {
+        //Initialize genetic algorithm
         const ga = new GeneticAlgorithm(this.birds, 0.05, CROSSOVERTYPE.randomCrossOver, POOLTYPE.ordinal)
         previousPopulationWinners = ga.apply()
         generationCount += 1
+        //Restart state
         this.game.state.start('main');
     }
 }

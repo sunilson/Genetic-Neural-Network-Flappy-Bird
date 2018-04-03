@@ -1,4 +1,8 @@
 const chance = new Chance()
+
+/**
+ * Functions used to do the crossover for all children
+ */
 const CROSSOVERTYPE = {
     halfwayCrossOver: function (parentPool, childAmount) {
         for (let i = 0; i < childAmount; i++) {
@@ -37,6 +41,9 @@ const CROSSOVERTYPE = {
     }
 }
 
+/**
+ * Functions that define how the parent pool should be created from the dead birds
+ */
 const POOLTYPE = {
     ordinal: function (birdList) {
         const parentPool = []
@@ -56,7 +63,6 @@ const POOLTYPE = {
         const parentPool = []
         birdList.forEach(bird => {
             let n = bird.fitness * 100
-            //TODO: CHANCEN VON GEWINNER VERINGERN? SIEHE NATURE OF CODE
             for (let i = 0; i < n; i++) {
                 parentPool.push(bird)
             }
@@ -65,6 +71,9 @@ const POOLTYPE = {
     }
 }
 
+/**
+ * Extracts two random parents from parent pool
+ */
 function selectParents(parentPool) {
     const a = chance.integer({
         min: 0,
@@ -90,16 +99,21 @@ class GeneticAlgorithm {
         this.prepare()
     }
 
+    /**
+     * Applies crossover and mutation and returns the generated generation
+     */
     apply() {
         let childs = this.crossover(this.parentPool, this.birds.length)
         childs = this.mutate(childs)
         return childs
     }
 
+    /**
+     * Prepares the previous generation to be used for crossover
+     */
     prepare() {
         const birdList = []
-        //Normalize fitness values
-        //Use normal js array to store birds so we can use normal for loop
+        //Normalize fitness values to 0-1
         let min = null
         let max = null
         this.birds.forEach(bird => {
@@ -107,6 +121,7 @@ class GeneticAlgorithm {
             if (bird.fitness > max || max === null) max = bird.fitness
             if (bird.fitness < min || min === null) min = bird.fitness
         });
+        //Use normal js array to store birds so we can use normal js operations
         birdList.forEach(bird => {
             bird.fitness = (bird.fitness - min) / (max - min)
         })
@@ -114,6 +129,9 @@ class GeneticAlgorithm {
         this.parentPool = this.pool(this.birds)
     }
 
+    /**
+     * Iterate over every value and with a fixed chance randomly change it
+     */
     mutate(children) {
         const chance = new Chance()
         for (let i = 0; i < children.length; i++) {

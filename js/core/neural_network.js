@@ -6,8 +6,8 @@ class NeuralNetwork {
         for (let i = 1; i < nodes.length; i++) {
             this.weights.push(math.zeros([nodes[i], nodes[i - 1]]))
         }
-
         const chance = new Chance()
+        //Initialize weights
         this.weights = this.weights.map(weight => {
             return weight.map(row => {
                 return row.map(val => {
@@ -21,6 +21,9 @@ class NeuralNetwork {
         })
     }
 
+    /**
+     * Iterate over layers and apply activation function (sigmoid in this case)
+     */
     query(inputs) {
         inputs = math.transpose(math.matrix([inputs]))
         for (let i = 0; i < this.nodes.length - 1; i++) {
