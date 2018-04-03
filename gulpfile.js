@@ -34,7 +34,7 @@ gulp.task('scripts', function () {
 
 gulp.task('deploy', ['scripts'], function () {
     return surge({
-        project: './build', // Path to your static build directory
+        project: '.', // Path to your static build directory
         domain: 'narrow-cake.surge.sh' // Your domain or Surge subdomain
     })
 })
