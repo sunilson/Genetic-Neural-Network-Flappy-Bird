@@ -7,4 +7,4 @@ Screenshot:
 <img src="https://i.imgur.com/Cx6cjZK.png">
 
 
-Project is also hosted on <a href="https://surge.sh>Surge.sh</a>. Click <a href="https://narrow-cake.surge.sh">here</a> to play!
+Project is also hosted on <a href="https://surge.sh">Surge.sh</a>. Click <a href="https://narrow-cake.surge.sh">here</a> to play!
