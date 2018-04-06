@@ -47,9 +47,6 @@ const CROSSOVERTYPE = {
 const POOLTYPE = {
     ordinal: function (birdList) {
         const parentPool = []
-        birdList.sort((a, b) => {
-            return a.fitness - b.fitness
-        })
         //Apply chances of offspring with ordinals
         for (let i = 0; i < this.birds.length; i++) {
             const ordinal = ((i + 1) / this.birds.length) * 100
@@ -85,7 +82,19 @@ function selectParents(parentPool) {
     })
     const parents = []
     parents.push(parentPool[a])
-    parents.push(parentPool[b])
+    if (parentPool[b].id !== parentPool[a].id) {
+        parents.push(parentPool[b])
+    } else {
+        for (let i = b; i < parentPool.length; i++) {
+            if (parentPool[i].id !== parentPool[a].id) {
+                parents.push(parentPool[i])
+                i = parentPool.length
+            } else if (i == parentPool.length - 1) {
+                i = -1
+            }
+        }
+    }
+    console.log(parents)
     return parents
 }
 
@@ -125,8 +134,24 @@ class GeneticAlgorithm {
         birdList.forEach(bird => {
             bird.fitness = (bird.fitness - min) / (max - min)
         })
+        birdList.sort((a, b) => {
+            return a.fitness - b.fitness
+        })
         this.birds = birdList
+
+        //Pass on 3 best directly
+        let bestThree = []
+        for (let i = this.birds.length - 1; i > this.birds.length - 4; i--) {
+            bestThree.push(this.birds[i])
+        }
+
+        //Generate offsprings for the rest
         this.parentPool = this.pool(this.birds)
+        for (let i = 0; i < 3; i++) {
+            this.parentPool[i] = bestThree.pop()
+        }
+
+        console.log(this.parentPool)
     }
 
     /**
@@ -144,9 +169,9 @@ class GeneticAlgorithm {
                                 fixed: 10
                             }) < this.mutationRate) {
                             children[i][k][j][l] = chance.floating({
-                                min: 0,
+                                min: -1,
                                 max: 1,
-                                fixed: 7
+                                fixed: 10
                             })
                         }
                     }

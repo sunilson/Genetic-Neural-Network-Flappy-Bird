@@ -35,11 +35,9 @@ class MainState extends Phaser.State {
         this.pipes.add(invisWallTop)
         this.pipes.add(invisWallBottom)
         this.birds = this.game.add.group()
-        this.addPipeRow()
-        this.timer = this.game.time.events.loop(1500, this.addPipeRow, this)
+        //this.timer = this.game.time.events.loop(1500, this.addPipeRow, this)
 
         //Background
-        this.backgrounds = []
         this.backgroundsGroup = this.game.add.group()
         this.updateBackgrounds()
 
@@ -55,6 +53,7 @@ class MainState extends Phaser.State {
      */
     update() {
         this.updateBackgrounds()
+        this.addPipeRow()
         this.birds.forEach(bird => {
             //Iterate over all alive birds
             if (bird.alive) {
@@ -82,7 +81,6 @@ class MainState extends Phaser.State {
                 })
             }
         })
-
         this.game.physics.arcade.overlap(this.birds, this.pipes, this.hitPipe, null, this);
     }
     /**
@@ -90,10 +88,10 @@ class MainState extends Phaser.State {
      */
     updateBackgrounds() {
         let background = null
-        if (this.backgrounds.length == 0) {
+        if (this.backgroundsGroup.length == 0) {
             //Add new background sprite on the start
             background = this.game.add.sprite(0, -50, 'bg')
-        } else if (this.backgrounds[this.backgrounds.length - 1].body.x + this.backgrounds[this.backgrounds.length - 1].width <= 500) {
+        } else if (this.backgroundsGroup.getAt(this.backgroundsGroup.length - 1).body.x + this.backgroundsGroup.getAt(this.backgroundsGroup.length - 1).width <= 500) {
             //Add new background sprite on the right side
             background = this.game.add.sprite(500, -50, 'bg')
         }
@@ -103,7 +101,6 @@ class MainState extends Phaser.State {
             background.body.velocity.x = -150;
             background.checkWorldBounds = true;
             background.outOfBoundsKill = true;
-            this.backgrounds.push(background)
             this.backgroundsGroup.addChild(background)
         }
     }
@@ -112,52 +109,53 @@ class MainState extends Phaser.State {
      * Spawns a new row of two pipes with a passing
      */
     addPipeRow() {
-        const upperY = util.getRandomInt(50, 340)
-        const pipeUpper = this.game.add.sprite(520, upperY, 'pipe');
-        const pipeLower = this.game.add.sprite(520, upperY + 100, 'pipe');
+        if (this.pipes.length <= 2 || this.pipes.getAt(this.pipes.length - 1).x + this.pipes.getAt(this.pipes.length - 1).width <= 100) {
+            const upperY = util.getRandomInt(50, 340)
+            const pipeUpper = this.game.add.sprite(400, upperY, 'pipe');
+            const pipeLower = this.game.add.sprite(400, upperY + 100, 'pipe');
 
-        pipeLower.scale.setTo(0.2, 0.2)
-        pipeUpper.scale.setTo(0.2, -0.2)
+            pipeLower.scale.setTo(0.2, 0.2)
+            pipeUpper.scale.setTo(0.2, -0.2)
 
-        this.game.physics.arcade.enable(pipeUpper);
-        this.game.physics.arcade.enable(pipeLower);
+            this.game.physics.arcade.enable(pipeUpper);
+            this.game.physics.arcade.enable(pipeLower);
 
-        this.pipes.add(pipeUpper);
-        this.pipes.add(pipeLower);
+            this.pipes.add(pipeUpper);
+            this.pipes.add(pipeLower);
 
-        /*
-        //Display passing point
-        const graphics = this.game.add.graphics(0, 0);
-        graphics.beginFill(0xFF700B, 1);
-        graphics.lineStyle(5, 0xffd900, 1);
-        graphics.moveTo(-5, -5)
-        graphics.lineTo(5, -5)
-        graphics.lineTo(5, 5)
-        graphics.lineTo(-5, 5)
-        graphics.endFill()
-        graphics.boundsPadding = 0;
-        */
+            /*
+            const graphics = this.game.add.graphics(0, 0);
+            graphics.beginFill(0xFF700B, 1);
+            graphics.lineStyle(5, 0xffd900, 1);
+            graphics.moveTo(-5, -5)
+            graphics.lineTo(5, -5)
+            graphics.lineTo(5, 5)
+            graphics.lineTo(-5, 5)
+            graphics.endFill()
+            graphics.boundsPadding = 0;
+            */
 
-        //Vertical middle and horizontal right point of passing. Target for birds
-        const passingPoint = this.game.add.sprite(568.6, upperY + 50)
-        //passingPoint.addChild(graphics)
-        this.game.physics.arcade.enable(passingPoint)
-        this.pipesPassings.add(passingPoint)
+            //Vertical middle and horizontal right point of passing. Target for birds
+            const passingPoint = this.game.add.sprite(448.6, upperY + 50)
+            //passingPoint.addChild(graphics)
+            this.game.physics.arcade.enable(passingPoint)
+            this.pipesPassings.add(passingPoint)
 
-        pipeLower.body.velocity.x = -200;
-        pipeUpper.body.velocity.x = -200;
-        passingPoint.body.velocity.x = -200;
+            pipeLower.body.velocity.x = -200;
+            pipeUpper.body.velocity.x = -200;
+            passingPoint.body.velocity.x = -200;
 
-        pipeLower.checkWorldBounds = true;
-        pipeUpper.checkWorldBounds = true;
-        passingPoint.checkWorldBounds = true;
+            pipeLower.checkWorldBounds = true;
+            pipeUpper.checkWorldBounds = true;
+            passingPoint.checkWorldBounds = true;
 
-        pipeLower.outOfBoundsKill = true;
-        pipeUpper.outOfBoundsKill = true;
-        passingPoint.outOfBoundsKill = true;
-        passingPoint.events.onOutOfBounds.add(function (point) {
-            point.destroy()
-        });
+            pipeLower.outOfBoundsKill = true;
+            pipeUpper.outOfBoundsKill = true;
+            passingPoint.outOfBoundsKill = true;
+            passingPoint.events.onOutOfBounds.add(function (point) {
+                point.destroy()
+            });
+        }
     }
     removePassingPoint(point) {
         this.pipesPassings.remove(point)
@@ -242,7 +240,7 @@ class MainState extends Phaser.State {
      */
     applyGenetics() {
         //Initialize genetic algorithm
-        const ga = new GeneticAlgorithm(this.birds, 0.05, CROSSOVERTYPE.randomCrossOver, POOLTYPE.ordinal)
+        const ga = new GeneticAlgorithm(this.birds, 0.1, CROSSOVERTYPE.randomCrossOver, POOLTYPE.ordinal)
         previousPopulationWinners = ga.apply()
         generationCount += 1
         //Restart state
